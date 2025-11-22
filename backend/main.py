@@ -36,8 +36,8 @@ app.add_middleware(
 )
 
 # API Keys (Set these as environment variables)
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY","AIzaSyCcwIsB_N9ziJLw_mhfsBbLuDy1N9NaERE")
-YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY","AIzaSyC2EfRNhGjP3dFE6vRvPtwKQNGkENIP3ic")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY","")
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY","")
 
 # Initialize Gemini
 genai.configure(api_key=GEMINI_API_KEY)
