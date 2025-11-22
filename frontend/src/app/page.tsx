@@ -1,7 +1,7 @@
 "use client";
 
 import FeatureCard from "@/components/FeatureCard";
-import { MessageSquare, BarChart3, Brain, Sun, Moon, Wind } from "lucide-react";
+import { MessageSquare, BarChart3, Brain, Sun, Moon, Wind, ScanSearch } from "lucide-react";
 
 export default function Home() {
   const features = [
@@ -12,9 +12,9 @@ export default function Home() {
       href: "/chatbot",
     },
     {
-      icon: BarChart3,
-      title: "Sentiment Analysis",
-      subtitle: "Understand your emotional patterns",
+      icon: ScanSearch,
+      title: "Research Link Scraper",
+      subtitle: "Fetch top research links for your content",
       href: "/sentiment-analysis",
     },
     {
