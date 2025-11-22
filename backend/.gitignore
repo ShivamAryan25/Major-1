@@ -172,3 +172,15 @@ logs/
 *.key
 secrets.json
 
+# Scraping output files
+code.json
+output.json
+final_output.json
+embeddings.json
+faiss_index.bin
+
+# ML Model files (if you want to track them, remove these lines)
+# depression_model.h5
+# scaler.pkl
+# label_encoders.pkl
+

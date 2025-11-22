@@ -1,6 +1,6 @@
 """
 Production-Ready Emotion-Aware AI Chatbot Backend
-FastAPI + Gemini + HuggingFace + YouTube API
+FastAPI + Gemini + HuggingFace + YouTube API + Web Scraping RAG
 """
 
 from fastapi import FastAPI, HTTPException, Header
@@ -9,10 +9,12 @@ from pydantic import BaseModel
 from transformers import pipeline
 import google.generativeai as genai
 from googleapiclient.discovery import build
-from typing import Optional
+from typing import Optional, List, Dict
 import os
 import uuid
 from datetime import datetime
+from scraper import scraper_instance
+from depression_predictor import depression_predictor
 
 # ============================================================================
 # CONFIGURATION
@@ -34,8 +36,8 @@ app.add_middleware(
 )
 
 # API Keys (Set these as environment variables)
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY","AIzaSyCcwIsB_N9ziJLw_mhfsBbLuDy1N9NaERE")
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY","AIzaSyC2EfRNhGjP3dFE6vRvPtwKQNGkENIP3ic")
 
 # Initialize Gemini
 genai.configure(api_key=GEMINI_API_KEY)
@@ -98,6 +100,42 @@ class ChatResponse(BaseModel):
     message_count: int
     session_id: str
     emotion_updated: bool
+
+class ScrapingRequest(BaseModel):
+    query: str
+    retrieval_query: Optional[str] = None
+
+class ScrapingResult(BaseModel):
+    text: str
+    source: str
+
+class ScrapingResponse(BaseModel):
+    query: str
+    total_links_found: int
+    pages_scraped: int
+    total_chunks: int
+    results: List[ScrapingResult]
+    error: Optional[str] = None
+
+class DepressionPredictionRequest(BaseModel):
+    Age: int
+    Academic_Pressure: int
+    Study_Satisfaction: int
+    Work_Study_Hours: int
+    Financial_Stress: int
+    Sleep_Duration: str
+    Dietary_Habits: str
+    Suicidal_Thoughts: str
+
+class Recommendation(BaseModel):
+    message: str
+    level: str
+    resources: List[str]
+
+class DepressionPredictionResponse(BaseModel):
+    depression_probability: float
+    prediction_message: str
+    recommendations: Recommendation
 
 # ============================================================================
 # EMOTION DETECTION
@@ -322,12 +360,84 @@ async def get_history(session_id: str):
         "history": session.conversation_history
     }
 
+@app.post("/scrape", response_model=ScrapingResponse)
+async def scrape_and_analyze(request: ScrapingRequest):
+    """
+    Web scraping endpoint with RAG capabilities
+    
+    Scrapes web content based on query, generates embeddings, and retrieves relevant data
+    """
+    try:
+        result = scraper_instance.full_pipeline(
+            query=request.query,
+            retrieval_query=request.retrieval_query
+        )
+        
+        # Convert to response model
+        if "error" in result and not result.get("results"):
+            return ScrapingResponse(
+                query=request.query,
+                total_links_found=0,
+                pages_scraped=0,
+                total_chunks=0,
+                results=[],
+                error=result["error"]
+            )
+        
+        return ScrapingResponse(
+            query=result["query"],
+            total_links_found=result.get("total_links_found", 0),
+            pages_scraped=result.get("pages_scraped", 0),
+            total_chunks=result.get("total_chunks", 0),
+            results=[ScrapingResult(**item) for item in result["results"]],
+            error=result.get("error")
+        )
+    
+    except Exception as e:
+        print(f"Scraping endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/predict-depression", response_model=DepressionPredictionResponse)
+async def predict_depression(request: DepressionPredictionRequest):
+    """
+    Depression prediction endpoint
+    
+    Analyzes user data to predict depression risk and provide recommendations
+    """
+    try:
+        # Convert request to dict with proper feature names
+        user_data = {
+            "Age": request.Age,
+            "Academic Pressure": request.Academic_Pressure,
+            "Study Satisfaction": request.Study_Satisfaction,
+            "Work/Study Hours": request.Work_Study_Hours,
+            "Financial Stress": request.Financial_Stress,
+            "Sleep Duration": request.Sleep_Duration,
+            "Dietary Habits": request.Dietary_Habits,
+            "Have you ever had suicidal thoughts ?": request.Suicidal_Thoughts
+        }
+        
+        # Make prediction
+        result = depression_predictor.predict(user_data)
+        
+        return DepressionPredictionResponse(
+            depression_probability=result["depression_probability"],
+            prediction_message=result["prediction_message"],
+            recommendations=Recommendation(**result["recommendations"])
+        )
+    
+    except Exception as e:
+        print(f"Depression prediction error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize models on startup"""
     print("🚀 Starting Emotion-Aware Chatbot Backend...")
     print("⚡ Emotion model will lazy-load on first request")
+    print("⚡ Loading depression prediction model...")
+    depression_predictor.load_model()
     print("✅ Server ready!")
 
 if __name__ == "__main__":
