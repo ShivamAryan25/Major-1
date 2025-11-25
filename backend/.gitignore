@@ -183,4 +183,11 @@ faiss_index.bin
 # depression_model.h5
 # scaler.pkl
 # label_encoders.pkl
+# voice_cnn.pth
+
+# Temporary audio files
+*.wav
+*.mp3
+*.ogg
+temp_audio/
 

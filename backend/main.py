@@ -3,7 +3,7 @@ Production-Ready Emotion-Aware AI Chatbot Backend
 FastAPI + Gemini + HuggingFace + YouTube API + Web Scraping RAG
 """
 
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from transformers import pipeline
@@ -15,6 +15,9 @@ import uuid
 from datetime import datetime
 from scraper import scraper_instance
 from depression_predictor import depression_predictor
+from voice_emotion_predictor import voice_emotion_predictor
+import tempfile
+import shutil
 
 # ============================================================================
 # CONFIGURATION
@@ -136,6 +139,19 @@ class DepressionPredictionResponse(BaseModel):
     depression_probability: float
     prediction_message: str
     recommendations: Recommendation
+
+class EmotionProbability(BaseModel):
+    emotion: str
+    emoji: str
+    probability: float
+
+class VoiceEmotionResponse(BaseModel):
+    emotion: str
+    emoji: str
+    description: str
+    confidence: float
+    all_probabilities: Dict[str, float]
+    top_emotions: List[EmotionProbability]
 
 # ============================================================================
 # EMOTION DETECTION
@@ -430,6 +446,67 @@ async def predict_depression(request: DepressionPredictionRequest):
         print(f"Depression prediction error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/predict-voice-emotion", response_model=VoiceEmotionResponse)
+async def predict_voice_emotion(audio: UploadFile = File(...)):
+    """
+    Voice emotion detection endpoint
+    
+    Analyzes uploaded audio file to detect emotion with probability scores
+    """
+    temp_file_path = None
+    try:
+        # Validate file type
+        if not audio.content_type or not audio.content_type.startswith('audio/'):
+            raise HTTPException(status_code=400, detail="File must be an audio file")
+        
+        # Determine file extension from filename or content type
+        file_extension = '.webm'  # Default
+        if audio.filename:
+            ext = os.path.splitext(audio.filename)[1]
+            if ext:
+                file_extension = ext
+        elif 'ogg' in audio.content_type:
+            file_extension = '.ogg'
+        elif 'mp4' in audio.content_type:
+            file_extension = '.mp4'
+        elif 'wav' in audio.content_type:
+            file_extension = '.wav'
+        
+        # Create temporary file to save uploaded audio with correct extension
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
+            temp_file_path = temp_file.name
+            shutil.copyfileobj(audio.file, temp_file)
+        
+        print(f"Saved audio file: {temp_file_path} ({audio.content_type})")
+        
+        # Make prediction
+        result = voice_emotion_predictor.predict_emotion(temp_file_path)
+        
+        return VoiceEmotionResponse(
+            emotion=result["emotion"],
+            emoji=result["emoji"],
+            description=result["description"],
+            confidence=result["confidence"],
+            all_probabilities=result["all_probabilities"],
+            top_emotions=[EmotionProbability(**item) for item in result["top_emotions"]]
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Voice emotion prediction error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    finally:
+        # Clean up temporary file
+        if temp_file_path and os.path.exists(temp_file_path):
+            try:
+                os.unlink(temp_file_path)
+            except:
+                pass
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -438,6 +515,8 @@ async def startup_event():
     print("⚡ Emotion model will lazy-load on first request")
     print("⚡ Loading depression prediction model...")
     depression_predictor.load_model()
+    print("⚡ Loading voice emotion model...")
+    voice_emotion_predictor.load_model()
     print("✅ Server ready!")
 
 if __name__ == "__main__":

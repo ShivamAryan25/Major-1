@@ -1,7 +1,15 @@
 "use client";
 
 import FeatureCard from "@/components/FeatureCard";
-import { MessageSquare, BarChart3, Brain, Sun, Moon, Wind, ScanSearch } from "lucide-react";
+import {
+  MessageSquare,
+  BarChart3,
+  Brain,
+  Volume2,
+  Moon,
+  Wind,
+  ScanSearch,
+} from "lucide-react";
 
 export default function Home() {
   const features = [
@@ -24,9 +32,10 @@ export default function Home() {
       href: "/depression-analysis",
     },
     {
-      icon: Sun,
-      title: "Energy",
-      subtitle: "Recharge and revitalize yourself",
+      icon: Volume2,
+      title: "Voice Emotion",
+      subtitle: "Express yourself through your voice",
+      href: "/voice-emotion",
     },
     {
       icon: Moon,
