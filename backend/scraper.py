@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Configuration
-SERPAPI_KEY = os.getenv("SERPAPI_KEY", "d02f0cdb837e62b4119fa3f92882c0f17271190b75ce0bfd1609b311009905cc")
+SERPAPI_KEY = os.getenv("SERPAPI_KEY", "")
 MAX_TOKENS_PER_CHUNK = 512
 MAX_RESULTS_TO_SCRAPE = 5
 
