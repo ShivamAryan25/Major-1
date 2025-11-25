@@ -15,25 +15,25 @@ export default function Home() {
   const features = [
     {
       icon: MessageSquare,
-      title: "Chatbot",
+      title: "Talk to Me",
       subtitle: "Have meaningful conversations",
       href: "/chatbot",
     },
     {
       icon: ScanSearch,
-      title: "Research Link Scraper",
+      title: "Discover More",
       subtitle: "Fetch top research links for your content",
       href: "/sentiment-analysis",
     },
     {
       icon: Brain,
-      title: "Depression Analysis",
+      title: "Well-Being Assessment",
       subtitle: "Assess your mental wellness",
       href: "/depression-analysis",
     },
     {
       icon: Volume2,
-      title: "Voice Emotion",
+      title: "Listen to Your Mood",
       subtitle: "Express yourself through your voice",
       href: "/voice-emotion",
     },
@@ -44,7 +44,7 @@ export default function Home() {
     },
     {
       icon: Wind,
-      title: "Breathe",
+      title: "Mental-Wellness Game",
       subtitle: "Flow with intention and ease",
     },
   ];
