@@ -41,11 +41,13 @@ export default function Home() {
       icon: Moon,
       title: "Rest",
       subtitle: "Embrace calm and restoration",
+      href: "/rest",
     },
     {
       icon: Wind,
       title: "Mental-Wellness Game",
       subtitle: "Flow with intention and ease",
+      href: "/breathe-test",
     },
   ];
 
